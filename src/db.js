@@ -1,7 +1,11 @@
 const Database = require('better-sqlite3');
+const os = require('os');
 const path = require('path');
 
-const db = new Database(process.env.DB_FILE || path.join(__dirname, '..', 'store.db'));
+const defaultDbFile = process.env.VERCEL
+  ? path.join(os.tmpdir(), 'codealpha-ecommercestore.db')
+  : path.join(__dirname, '..', 'store.db');
+const db = new Database(process.env.DB_FILE || defaultDbFile);
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
