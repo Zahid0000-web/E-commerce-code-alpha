@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ShopHub — My Orders</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div id="site-header"></div>
+  <main>
+    <h1>My Orders</h1>
+    <div id="list"></div>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-top">
+        <a class="footer-brand" href="/" aria-label="ShopHub home">shop<span>hub</span><i aria-hidden="true">.</i></a>
+        <p class="footer-tagline">Thoughtful finds for your everyday.</p>
+        <span class="footer-credit"><span class="footer-spark" aria-hidden="true">✳</span> Made by <strong>Zahid</strong></span>
+      </div>
+      <div class="footer-bottom"><span>© 2026 ShopHub. All rights reserved.</span><a href="/">A little more lovely, every day <span aria-hidden="true">↗</span></a></div>
+    </div>
+  </footer>
+  <script src="/js/app.js"></script>
+  <script>
+    const list = document.getElementById('list');
+    if (!Store.getUser()) {
+      location.href = '/login.html?next=/orders.html';
+    } else {
+      Store.api('/orders').then((orders) => {
+        if (orders.length === 0) {
+          list.innerHTML = '<div class="panel empty"><p>You have not placed any orders yet.</p><a class="btn" href="/">Start shopping</a></div>';
+          return;
+        }
+        list.innerHTML = orders.map((o) => `
+          <div class="panel order">
+            <div class="order-head">
+              <strong>Order #${o.id}</strong>
+              <span class="muted">${Store.escapeHtml(new Date(o.created_at.replace(' ', 'T') + 'Z').toLocaleString())}</span>
+              <span class="status">${Store.escapeHtml(o.status)}</span>
+            </div>
+            <table><tbody>
+              ${o.items.map((i) => `<tr><td>${Store.escapeHtml(i.name)} × ${i.quantity}</td><td style="text-align:right">${Store.money(i.price_cents * i.quantity)}</td></tr>`).join('')}
+              <tr><td><strong>Total</strong></td><td style="text-align:right"><strong>${Store.money(o.total_cents)}</strong></td></tr>
+            </tbody></table>
+            <p class="muted">Ship to: ${Store.escapeHtml(o.shipping_name)}, ${Store.escapeHtml(o.shipping_address)}</p>
+          </div>`).join('');
+      }).catch(() => (location.href = '/login.html?next=/orders.html'));
+    }
+  </script>
+</body>
+</html>

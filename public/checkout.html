@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ShopHub — Checkout</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div id="site-header"></div>
+  <main>
+    <h1>Checkout</h1>
+    <div id="root"></div>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-top">
+        <a class="footer-brand" href="/" aria-label="ShopHub home">shop<span>hub</span><i aria-hidden="true">.</i></a>
+        <p class="footer-tagline">Thoughtful finds for your everyday.</p>
+        <span class="footer-credit"><span class="footer-spark" aria-hidden="true">✳</span> Made by <strong>Zahid</strong></span>
+      </div>
+      <div class="footer-bottom"><span>© 2026 ShopHub. All rights reserved.</span><a href="/">A little more lovely, every day <span aria-hidden="true">↗</span></a></div>
+    </div>
+  </footer>
+  <script src="/js/app.js"></script>
+  <script>
+    const root = document.getElementById('root');
+    const user = Store.getUser();
+
+    if (!user) {
+      location.href = '/login.html?next=/checkout.html';
+    } else if (Store.getCart().length === 0) {
+      root.innerHTML = '<div class="panel empty"><p>Your cart is empty.</p><a class="btn" href="/">Browse products</a></div>';
+    } else {
+      const cart = Store.getCart();
+      root.innerHTML = `
+        <div class="panel">
+          <h2>Order summary</h2>
+          <table><tbody>
+            ${cart.map((i) => `<tr><td>${Store.escapeHtml(i.name)} × ${i.quantity}</td><td style="text-align:right">${Store.money(i.price_cents * i.quantity)}</td></tr>`).join('')}
+            <tr><td><strong>Total</strong></td><td style="text-align:right"><strong>${Store.money(Store.cartTotal())}</strong></td></tr>
+          </tbody></table>
+          <h2>Shipping details</h2>
+          <div id="msg"></div>
+          <form id="form">
+            <div class="field"><label for="sname">Full name</label><input id="sname" required value="${Store.escapeHtml(user.name)}"></div>
+            <div class="field"><label for="saddr">Shipping address</label><textarea id="saddr" rows="3" required placeholder="Street, city, postal code, country"></textarea></div>
+            <p class="muted">Demo store: no real payment is taken (pay on delivery).</p>
+            <button class="btn" type="submit" id="place">Place order</button>
+          </form>
+        </div>`;
+
+      document.getElementById('form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const msg = document.getElementById('msg');
+        const btn = document.getElementById('place');
+        btn.disabled = true;
+        msg.innerHTML = '';
+        try {
+          const { orderId } = await Store.api('/orders', {
+            method: 'POST',
+            body: JSON.stringify({
+              shippingName: sname.value,
+              shippingAddress: saddr.value,
+              items: Store.getCart().map((i) => ({ productId: i.productId, quantity: i.quantity })),
+            }),
+          });
+          Store.clearCart();
+          root.innerHTML = `<div class="panel empty"><h2>Thank you! 🎉</h2><p>Your order <strong>#${orderId}</strong> has been placed.</p><a class="btn" href="/orders.html">View my orders</a></div>`;
+        } catch (err) {
+          btn.disabled = false;
+          msg.innerHTML = `<div class="alert error">${Store.escapeHtml(err.message)}</div>`;
+          if (/log in|token|authentication/i.test(err.message)) setTimeout(() => (location.href = '/login.html?next=/checkout.html'), 1200);
+        }
+      });
+    }
+  </script>
+</body>
+</html>

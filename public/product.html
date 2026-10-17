@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ShopHub — Product</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div id="site-header"></div>
+  <main>
+    <p><a class="muted" href="/">← Back to products</a></p>
+    <div id="detail"></div>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-top">
+        <a class="footer-brand" href="/" aria-label="ShopHub home">shop<span>hub</span><i aria-hidden="true">.</i></a>
+        <p class="footer-tagline">Thoughtful finds for your everyday.</p>
+        <span class="footer-credit"><span class="footer-spark" aria-hidden="true">✳</span> Made by <strong>Zahid</strong></span>
+      </div>
+      <div class="footer-bottom"><span>© 2026 ShopHub. All rights reserved.</span><a href="/">A little more lovely, every day <span aria-hidden="true">↗</span></a></div>
+    </div>
+  </footer>
+  <script src="/js/app.js"></script>
+  <script>
+    const detail = document.getElementById('detail');
+    const id = new URLSearchParams(location.search).get('id');
+
+    (async () => {
+      let p;
+      try { p = await Store.api('/products/' + encodeURIComponent(id)); }
+      catch { detail.innerHTML = '<p class="empty">Product not found.</p>'; return; }
+
+      document.title = `ShopHub — ${p.name}`;
+      const inStock = p.stock > 0;
+      detail.innerHTML = `
+        <div class="detail">
+          <img src="${Store.escapeHtml(p.image_url)}" alt="${Store.escapeHtml(p.name)}">
+          <div>
+            <span class="muted">${Store.escapeHtml(p.category)}</span>
+            <h1>${Store.escapeHtml(p.name)}</h1>
+            <div class="price">${Store.money(p.price_cents)}</div>
+            <p>${Store.escapeHtml(p.description)}</p>
+            <p class="${inStock ? 'stock-ok' : 'stock-out'}">${inStock ? `In stock (${p.stock} available)` : 'Out of stock'}</p>
+            <div class="qty-row">
+              <input id="qty" type="number" min="1" max="${p.stock}" value="1" ${inStock ? '' : 'disabled'} aria-label="Quantity">
+              <button class="btn" id="add" ${inStock ? '' : 'disabled'}>Add to cart</button>
+            </div>
+          </div>
+        </div>`;
+
+      document.getElementById('add')?.addEventListener('click', () => {
+        const qty = Math.max(1, parseInt(document.getElementById('qty').value, 10) || 1);
+        Store.addToCart(p, qty);
+      });
+    })();
+  </script>
+</body>
+</html>

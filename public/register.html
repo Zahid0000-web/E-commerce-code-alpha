@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ShopHub — Register</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div id="site-header"></div>
+  <main>
+    <section class="auth-layout">
+      <aside class="auth-story">
+        <img class="auth-photo" src="/images/candles.jpg" alt="" aria-hidden="true">
+        <div class="auth-story-content">
+          <span class="eyebrow">Make room for lovely</span>
+          <h2>Small discoveries. Very good days.</h2>
+          <p>A little corner of the internet for things you’ll use, love, and keep coming back to.</p>
+          <span class="auth-signoff">Your everyday, a little more lovely.</span>
+        </div>
+        <span class="auth-issue" aria-hidden="true">S&nbsp; / &nbsp;02</span>
+      </aside>
+      <div class="panel form-card">
+        <span class="eyebrow">A good place to start</span>
+        <h1>Find your people.</h1>
+        <p class="form-intro">Create your free account and start exploring.</p>
+        <div id="msg"></div>
+        <form id="form">
+          <div class="field"><label for="name">Your name</label><input id="name" required autocomplete="name" placeholder="How should we call you?"></div>
+          <div class="field"><label for="email">Email address</label><input id="email" type="email" required autocomplete="email" placeholder="you@example.com"></div>
+          <div class="field"><label for="password">Password <span class="label-note">6+ characters</span></label><input id="password" type="password" minlength="6" required autocomplete="new-password" placeholder="Create a password"></div>
+          <button class="btn block" type="submit">Create my account <span aria-hidden="true">→</span></button>
+        </form>
+        <p class="muted">Already one of us? <a href="/login.html">Sign in</a></p>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-top">
+        <a class="footer-brand" href="/" aria-label="ShopHub home">shop<span>hub</span><i aria-hidden="true">.</i></a>
+        <p class="footer-tagline">Thoughtful finds for your everyday.</p>
+        <span class="footer-credit"><span class="footer-spark" aria-hidden="true">✳</span> Made by <strong>Zahid</strong></span>
+      </div>
+      <div class="footer-bottom"><span>© 2026 ShopHub. All rights reserved.</span><a href="/">A little more lovely, every day <span aria-hidden="true">↗</span></a></div>
+    </div>
+  </footer>
+  <script src="/js/app.js"></script>
+  <script>
+    document.getElementById('form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById('msg');
+      msg.innerHTML = '';
+      try {
+        const { token, user } = await Store.api('/auth/register', {
+          method: 'POST',
+          body: JSON.stringify({
+            name: document.getElementById('name').value,
+            email: document.getElementById('email').value,
+            password: document.getElementById('password').value,
+          }),
+        });
+        Store.setSession(token, user);
+        location.href = '/';
+      } catch (err) {
+        msg.innerHTML = `<div class="alert error">${Store.escapeHtml(err.message)}</div>`;
+      }
+    });
+  </script>
+</body>
+</html>

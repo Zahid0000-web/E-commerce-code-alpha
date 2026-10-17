@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ShopHub — Cart</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div id="site-header"></div>
+  <main>
+    <h1>Shopping Cart</h1>
+    <div id="cart" class="panel"></div>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-top">
+        <a class="footer-brand" href="/" aria-label="ShopHub home">shop<span>hub</span><i aria-hidden="true">.</i></a>
+        <p class="footer-tagline">Thoughtful finds for your everyday.</p>
+        <span class="footer-credit"><span class="footer-spark" aria-hidden="true">✳</span> Made by <strong>Zahid</strong></span>
+      </div>
+      <div class="footer-bottom"><span>© 2026 ShopHub. All rights reserved.</span><a href="/">A little more lovely, every day <span aria-hidden="true">↗</span></a></div>
+    </div>
+  </footer>
+  <script src="/js/app.js"></script>
+  <script>
+    const root = document.getElementById('cart');
+
+    function render() {
+      const cart = Store.getCart();
+      if (cart.length === 0) {
+        root.innerHTML = '<div class="empty"><p>Your cart is empty.</p><a class="btn" href="/">Browse products</a></div>';
+        return;
+      }
+      root.innerHTML = `
+        <table>
+          <thead><tr><th></th><th>Product</th><th>Price</th><th>Qty</th><th>Subtotal</th><th></th></tr></thead>
+          <tbody>
+            ${cart.map((i) => `
+              <tr>
+                <td><img class="cart-img" src="${Store.escapeHtml(i.image_url)}" alt=""></td>
+                <td><a href="/product.html?id=${i.productId}">${Store.escapeHtml(i.name)}</a></td>
+                <td>${Store.money(i.price_cents)}</td>
+                <td><span class="qty-ctl">
+                  <button data-act="dec" data-id="${i.productId}" aria-label="Decrease">−</button>
+                  <span>${i.quantity}</span>
+                  <button data-act="inc" data-id="${i.productId}" aria-label="Increase">+</button>
+                </span></td>
+                <td>${Store.money(i.price_cents * i.quantity)}</td>
+                <td><button class="link-btn" data-act="rm" data-id="${i.productId}">Remove</button></td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+        <div class="summary">
+          <span>Total: ${Store.money(Store.cartTotal())}</span>
+          <a class="btn" href="/checkout.html">Proceed to checkout</a>
+        </div>`;
+    }
+
+    root.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-act]');
+      if (!btn) return;
+      const id = Number(btn.dataset.id);
+      const item = Store.getCart().find((i) => i.productId === id);
+      if (!item) return;
+      if (btn.dataset.act === 'inc') {
+        if (item.quantity >= item.stock) Store.toast(`Only ${item.stock} in stock`);
+        else Store.setQuantity(id, item.quantity + 1);
+      }
+      if (btn.dataset.act === 'dec') Store.setQuantity(id, item.quantity - 1);
+      if (btn.dataset.act === 'rm') Store.setQuantity(id, 0);
+      render();
+    });
+    render();
+  </script>
+</body>
+</html>

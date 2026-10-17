@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ShopHub — Products</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div id="site-header"></div>
+  <main>
+    <section class="shop-hero" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <span class="eyebrow">A little more lovely, every day</span>
+        <h1 id="hero-title">Good things.<br>Better living.</h1>
+        <p>Thoughtful finds for your everyday — picked to make home, work and everything in between feel better.</p>
+        <a class="btn hero-cta" href="#collection">Explore the collection <span aria-hidden="true">↗</span></a>
+      </div>
+      <div class="hero-art">
+        <img class="hero-photo" src="/images/backpack.jpg" alt="A featured piece from the everyday collection">
+        <div class="hero-stamp" aria-hidden="true">THE<br>GOOD<br>EDIT</div>
+        <div class="hero-caption">
+          <img src="/images/headphones.jpg" alt="">
+          <span><strong>Little things, well chosen</strong><br><span class="muted">Thoughtfully picked for you</span></span>
+        </div>
+      </div>
+    </section>
+    <section id="collection" aria-labelledby="collection-title">
+      <div class="collection-head">
+        <div>
+          <span class="eyebrow">Made for your everyday</span>
+          <h2 id="collection-title">Find your new favorite</h2>
+        </div>
+      </div>
+      <div class="toolbar">
+        <input id="search" type="search" placeholder="Search the collection…" aria-label="Search products">
+        <select id="category" aria-label="Filter by category"><option>All</option></select>
+      </div>
+      <nav id="category-chips" class="category-chips" aria-label="Quick category filters"></nav>
+      <div class="results-line"><span id="result-count" aria-live="polite"></span><span>Curated for everyday living</span></div>
+      <div id="grid" class="grid"></div>
+      <p id="empty" class="empty" hidden>No products match your search.</p>
+    </section>
+    <section class="store-notes" aria-label="Shopping promises">
+      <div class="store-note"><span class="note-icon" aria-hidden="true">✳</span><span><strong>Thoughtfully picked</strong><small>Everyday things, made better</small></span></div>
+      <div class="store-note"><span class="note-icon" aria-hidden="true">↗</span><span><strong>Easy checkout</strong><small>Simple shopping, pay on delivery</small></span></div>
+      <div class="store-note"><span class="note-icon" aria-hidden="true">♡</span><span><strong>Made for real life</strong><small>Simple shopping, no fuss</small></span></div>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-top">
+        <a class="footer-brand" href="/" aria-label="ShopHub home">shop<span>hub</span><i aria-hidden="true">.</i></a>
+        <p class="footer-tagline">Thoughtful finds for your everyday.</p>
+        <span class="footer-credit"><span class="footer-spark" aria-hidden="true">✳</span> Made by <strong>Zahid</strong></span>
+      </div>
+      <div class="footer-bottom"><span>© 2026 ShopHub. All rights reserved.</span><a href="#collection">A little more lovely, every day <span aria-hidden="true">↗</span></a></div>
+    </div>
+  </footer>
+  <script src="/js/app.js"></script>
+  <script>
+    const grid = document.getElementById('grid');
+    const search = document.getElementById('search');
+    const category = document.getElementById('category');
+    const categoryChips = document.getElementById('category-chips');
+    const resultCount = document.getElementById('result-count');
+    const empty = document.getElementById('empty');
+    let products = [];
+
+    async function load() {
+      const params = new URLSearchParams();
+      if (search.value.trim()) params.set('q', search.value.trim());
+      if (category.value !== 'All') params.set('category', category.value);
+      products = await Store.api('/products?' + params);
+      render();
+    }
+
+    function render() {
+      empty.hidden = products.length > 0;
+      resultCount.textContent = `${products.length} ${products.length === 1 ? 'find' : 'finds'}`;
+      grid.innerHTML = products.map((p) => `
+        <article class="card">
+          <a href="/product.html?id=${p.id}"><img src="${Store.escapeHtml(p.image_url)}" alt="${Store.escapeHtml(p.name)}" loading="lazy"></a>
+          <div class="body">
+            <span class="cat">${Store.escapeHtml(p.category)}</span>
+            <a class="name" href="/product.html?id=${p.id}">${Store.escapeHtml(p.name)}</a>
+            <div class="actions">
+              <span class="price">${Store.money(p.price_cents)}</span>
+              <button class="btn small" data-id="${p.id}" ${p.stock < 1 ? 'disabled' : ''}>${p.stock < 1 ? 'Sold out' : 'Add to cart'}</button>
+            </div>
+          </div>
+        </article>`).join('');
+    }
+
+    grid.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-id]');
+      if (!btn) return;
+      const product = products.find((p) => p.id === Number(btn.dataset.id));
+      if (product) Store.addToCart(product, 1);
+    });
+
+    let timer;
+    search.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(load, 250); });
+    function renderCategoryChips(categories) {
+      categoryChips.innerHTML = ['All', ...categories].map((value) => `
+        <button class="category-chip${category.value === value ? ' active' : ''}" type="button"
+          aria-pressed="${category.value === value}" data-category="${Store.escapeHtml(value)}">
+          ${Store.escapeHtml(value)}
+        </button>`).join('');
+    }
+
+    categoryChips.addEventListener('click', (e) => {
+      const chip = e.target.closest('button[data-category]');
+      if (!chip) return;
+      category.value = chip.dataset.category;
+      renderCategoryChips([...category.options].slice(1).map((option) => option.value));
+      load();
+    });
+
+    category.addEventListener('change', () => {
+      renderCategoryChips([...category.options].slice(1).map((option) => option.value));
+      load();
+    });
+
+    (async () => {
+      const cats = await Store.api('/categories');
+      category.innerHTML = ['All', ...cats].map((c) => `<option>${Store.escapeHtml(c)}</option>`).join('');
+      renderCategoryChips(cats);
+      load();
+    })().catch((e) => Store.toast(e.message));
+  </script>
+</body>
+</html>
